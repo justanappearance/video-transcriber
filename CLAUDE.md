@@ -1,13 +1,14 @@
 # video-transcriber
 
 ## What it does
-A one-file CLI tool: point it at a video, get a full text transcript in a dedicated
-transcripts folder (`C:\Videos\_transcripts`, outside this repo and outside `footage\`).
-Built for Mike's habit of recording himself talking through his thoughts (e.g. working
-through a dating situation) and wanting a full, high-fidelity, private transcript to paste
-into a Claude chat afterward - not a summary, the raw rambling as-spoken, since the
-hedging/repetition/self-correction is itself part of the signal he wants preserved.
-Runs entirely locally on GPU, nothing leaves the machine.
+A one-file CLI tool: point it at a video, get a full text transcript in
+`C:\Programs\video-transcriber\transcripts` (note: that's a *data* folder, separate from
+this repo's own checkout location under `...\Coding\video-transcriber\` - same base name,
+different purpose, see DECISIONS.md). Built for Mike's habit of recording himself talking
+through his thoughts (e.g. working through a dating situation) and wanting a full,
+high-fidelity, private transcript to paste into a Claude chat afterward - not a summary,
+the raw rambling as-spoken, since the hedging/repetition/self-correction is itself part of
+the signal he wants preserved. Runs entirely locally on GPU, nothing leaves the machine.
 
 ## Architecture
 Single script, `transcribe.py`. It calls the `faster-whisper` Python API directly
@@ -19,7 +20,7 @@ gets silently rewritten.
 - `transcribe.py` - the whole tool. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR)`
   runs `WhisperModel(model, device="cuda", compute_type="int8").transcribe(...)` and writes
   one segment's text per line to `<output_dir>/<video stem>.txt`. `output_dir` defaults to
-  `C:\Videos\_transcripts` but can be overridden with `--output-dir`.
+  `C:\Programs\video-transcriber\transcripts` but can be overridden with `--output-dir`.
 
 ## Key decisions
 See DECISIONS.md. Short version: full transcript fidelity (not fast keyword

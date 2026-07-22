@@ -83,3 +83,20 @@
 - Why rejected: former already caused a lost transcript; latter risks personal content
   landing in a public repo.
 - Date: 2026-07-21
+- Superseded 2026-07-21: see next entry - Mike moved this again the same day, `C:\Videos`
+  turned out to be the wrong tree entirely, not just the wrong subfolder.
+
+## Moved again: transcripts live at C:\Programs\video-transcriber\transcripts, not under C:\Videos at all
+- Decision: `TRANSCRIPTS_DIR` is now `C:\Programs\video-transcriber\transcripts`. Note this
+  is a *different folder* from this repo's own checkout (`...\Coding\video-transcriber\`) -
+  same base name, coincidentally, but one is code (this repo, public) and the other is
+  private output data. Don't confuse the two when looking for either.
+- Why: Mike's framing - `C:\Videos` is for video assets; a transcript of a video journal
+  isn't really that, it's Claude sounding-board material he's going to paste into a chat.
+  The previous entry only fixed *which pipeline could disturb the file*, not the deeper
+  mismatch of storing conversation-bound text under a folder tree that's conceptually about
+  video files.
+- Rejected: `C:\Videos\_transcripts` (previous entry).
+- Why rejected: right instinct (decouple from footage-triage churn), wrong tree - still
+  filed under "videos" a folder of content whose actual purpose is text input to Claude.
+- Date: 2026-07-21
