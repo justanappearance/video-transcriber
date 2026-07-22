@@ -1,7 +1,8 @@
 # video-transcriber
 
 ## What it does
-A one-file CLI tool: point it at a video, get a full text transcript written next to it.
+A one-file CLI tool: point it at a video, get a full text transcript in a dedicated
+transcripts folder (`C:\Videos\_transcripts`, outside this repo and outside `footage\`).
 Built for Mike's habit of recording himself talking through his thoughts (e.g. working
 through a dating situation) and wanting a full, high-fidelity, private transcript to paste
 into a Claude chat afterward - not a summary, the raw rambling as-spoken, since the
@@ -15,9 +16,10 @@ step. Cleanup, if wanted, is a separate manual pass Mike does himself afterward 
 gets silently rewritten.
 
 ## File map
-- `transcribe.py` - the whole tool. `transcribe(video_path, model="medium")` runs
-  `WhisperModel(model, device="cuda", compute_type="int8").transcribe(...)` and writes
-  one segment's text per line to a `.txt` next to the video.
+- `transcribe.py` - the whole tool. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR)`
+  runs `WhisperModel(model, device="cuda", compute_type="int8").transcribe(...)` and writes
+  one segment's text per line to `<output_dir>/<video stem>.txt`. `output_dir` defaults to
+  `C:\Videos\_transcripts` but can be overridden with `--output-dir`.
 
 ## Key decisions
 See DECISIONS.md. Short version: full transcript fidelity (not fast keyword

@@ -62,3 +62,24 @@
 - Why rejected: openai-whisper measured ~4x slower for the same output quality; int8_float16
   isn't supported on this GPU at all.
 - Date: 2026-07-21
+
+## Transcripts write to a dedicated C:\Videos\_transcripts folder, not next to the source video
+- Decision: `transcribe.py` now writes output to `C:\Videos\_transcripts\<video stem>.txt`
+  by default (overridable via `--output-dir`), instead of next to the source video file.
+- Why: source videos live under `C:\Videos\footage\...` and get moved/recategorized/deleted
+  by the sibling `footage-triage` project as part of its normal operation. Writing the
+  transcript next to the video ties the transcript's lifecycle to the video's - concretely
+  broke once already: a transcript ended up stranded in a `_old_camera_folder_debris` folder
+  after its source video was triaged elsewhere, and was later cleaned up entirely by the
+  pipeline before anyone moved it out. A dedicated folder outside `footage\` isn't touched
+  by that pipeline at all.
+- Also why it's `C:\Videos\_transcripts` and not somewhere under this repo: this repo is
+  public on GitHub; transcript content (personal, sometimes about specific people) must
+  never be anywhere near a folder that gets `git add`ed. Naming matches the existing
+  underscore-prefixed utility-folder convention under `C:\Videos` (`_inbox`,
+  `_google_drive_review`, `_youtube_review`).
+- Rejected: leaving transcripts next to the source video (status quo); putting them inside
+  this repo for convenience.
+- Why rejected: former already caused a lost transcript; latter risks personal content
+  landing in a public repo.
+- Date: 2026-07-21
