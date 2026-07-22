@@ -38,3 +38,27 @@
 - Rejected: per-project venv, matching repo convention.
 - Why rejected: cost not worth it here.
 - Date: 2026-07-21
+
+## Switched from openai-whisper to faster-whisper
+- Decision: `transcribe.py` now calls `faster-whisper` (CTranslate2 backend) directly via
+  its Python API, `compute_type="int8"`, instead of shelling out to the `openai-whisper`
+  CLI. `requirements.txt` is now just `faster-whisper` - torch is no longer a dependency
+  of this project at all.
+- Why: Mike asked if transcription could be faster. Measured directly on this GPU with the
+  same `medium` model: a 17-minute clip took ~90 seconds with `faster-whisper`/int8 vs.
+  ~5-6 minutes with the `openai-whisper` CLI path - roughly a 4x speedup for equivalent
+  quality, and no torch/CUDA-index dependency headache (see the two entries above) at all.
+- Why `openai-whisper` was picked first instead of this: the original setup carried over
+  `footage-triage`'s stated reason for avoiding `faster-whisper`/`ctranslate2` (numba/
+  wheel-availability risk on this Python version) without re-checking whether that still
+  held here. It didn't - `pip install faster-whisper` resolves a normal wheel (`ctranslate2`
+  4.8.1) for this Python version with no issue. Lesson: verify an inherited decision's
+  premise before reusing it in a new project, don't just carry the caution forward.
+- Gotcha hit during the switch: `compute_type="int8_float16"` fails outright on this GPU
+  (Pascal/sm_61) - "Requested int8_float16 compute type, but the target device or backend
+  do not support efficient int8_float16 computation." Plain `int8` works.
+- Rejected: staying on `openai-whisper`; also tried `int8_float16` before falling back to
+  `int8`.
+- Why rejected: openai-whisper measured ~4x slower for the same output quality; int8_float16
+  isn't supported on this GPU at all.
+- Date: 2026-07-21
