@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 venv/
 .venv/
+
+# Personal transcript output - never commit, this repo is public. See DECISIONS.md.
+transcripts/

@@ -13,10 +13,10 @@ from faster_whisper import WhisperModel
 
 DEFAULT_MODEL = "medium"
 
-# Deliberately outside this repo (which is public) and outside C:\Videos entirely - a
-# transcript is Claude sounding-board material, not a video asset, and footage\ contents
-# get moved/recategorized/deleted by the footage-triage pipeline. See DECISIONS.md.
-TRANSCRIPTS_DIR = Path(r"C:\Programs\video-transcriber\transcripts")
+# Lives inside the repo now (Mike consolidated everything under C:\Coding), but this repo
+# is public on GitHub - transcripts are personal and must never be committed. Protected via
+# .gitignore (transcripts/), not by keeping the folder outside the repo. See DECISIONS.md.
+TRANSCRIPTS_DIR = Path(r"C:\Coding\video-transcriber\transcripts")
 
 
 def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = TRANSCRIPTS_DIR) -> Path:

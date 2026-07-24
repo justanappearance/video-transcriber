@@ -2,9 +2,8 @@
 
 ## What it does
 A one-file CLI tool: point it at a video, get a full text transcript in
-`C:\Programs\video-transcriber\transcripts` (note: that's a *data* folder, separate from
-this repo's own checkout location under `...\Coding\video-transcriber\` - same base name,
-different purpose, see DECISIONS.md). Built for Mike's habit of recording himself talking
+`transcripts/` inside this repo (gitignored - see DECISIONS.md for why that's safe despite
+this repo being public on GitHub). Built for Mike's habit of recording himself talking
 through his thoughts (e.g. working through a dating situation) and wanting a full,
 high-fidelity, private transcript to paste into a Claude chat afterward - not a summary,
 the raw rambling as-spoken, since the hedging/repetition/self-correction is itself part of
@@ -20,7 +19,7 @@ gets silently rewritten.
 - `transcribe.py` - the whole tool. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR)`
   runs `WhisperModel(model, device="cuda", compute_type="int8").transcribe(...)` and writes
   one segment's text per line to `<output_dir>/<video stem>.txt`. `output_dir` defaults to
-  `C:\Programs\video-transcriber\transcripts` but can be overridden with `--output-dir`.
+  `C:\Coding\video-transcriber\transcripts` but can be overridden with `--output-dir`.
 
 ## Key decisions
 See DECISIONS.md. Short version: full transcript fidelity (not fast keyword
@@ -31,6 +30,10 @@ whisper filter. Originally built on the `openai-whisper` CLI + CUDA torch; switc
 quality - see DECISIONS.md for the switch and why torch wasn't tried first.
 
 ## Known gotchas
+- **`transcripts/` is gitignored, not absent.** The folder lives inside this public repo's
+  checkout now (`C:\Coding\video-transcriber\transcripts`) - it's protected from ever being
+  committed by `.gitignore`, not by living outside the repo like it used to. Don't remove
+  that gitignore entry without re-reading DECISIONS.md.
 - **This GPU (GTX 1060, Pascal, sm_61) doesn't support `int8_float16` compute type in
   CTranslate2** - fails with "Requested int8_float16 compute type, but the target device
   or backend do not support efficient int8_float16 computation." Plain `int8` works fine

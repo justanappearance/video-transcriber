@@ -100,3 +100,25 @@
 - Why rejected: right instinct (decouple from footage-triage churn), wrong tree - still
   filed under "videos" a folder of content whose actual purpose is text input to Claude.
 - Date: 2026-07-21
+- Superseded 2026-07-24: see next entry - Mike moved his whole Coding folder to `C:\Coding`
+  and wants transcripts consolidated inside the repo checkout itself.
+
+## Moved again: transcripts live inside the repo at C:\Coding\video-transcriber\transcripts, protected by .gitignore
+- Decision: `TRANSCRIPTS_DIR` is now `C:\Coding\video-transcriber\transcripts`, inside this
+  repo's own checkout. Added `transcripts/` to `.gitignore` so the folder's contents are
+  never tracked or committed.
+- Why: Mike moved his entire Coding folder from OneDrive to `C:\Coding` and, in the process,
+  had already manually consolidated the existing transcript files into the repo's new
+  location himself before asking me to formalize it. Rather than fight that and put them
+  back outside the repo, the safety property that mattered (personal content never reaching
+  a public GitHub push) is preserved by gitignoring the folder instead of relocating it
+  outside the repo tree.
+- Rejected: keeping transcripts outside any repo folder (previous entry, and a sibling
+  option floated - `C:\Coding\_transcripts` next to the repo rather than inside it).
+- Why rejected: Mike explicitly asked for consolidation inside the repo folder once asked
+  to choose; gitignore achieves the same "never gets committed" guarantee without fighting
+  where he'd already put the files.
+- Caution for later: this only holds as long as `transcripts/` stays in `.gitignore`. If
+  that line is ever removed, everything in it would be eligible for `git add`. Don't remove
+  it without re-reading this entry.
+- Date: 2026-07-24
