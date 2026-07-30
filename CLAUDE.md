@@ -10,15 +10,16 @@ the raw rambling as-spoken, since the hedging/repetition/self-correction is itse
 the signal he wants preserved. Runs entirely locally on GPU, nothing leaves the machine.
 
 ## Architecture
-Single script, `transcribe.py`. It calls the `faster-whisper` Python API directly
-(`WhisperModel(...).transcribe(...)`) - no subprocess, no batching, no cleanup/summarization
-step. Cleanup, if wanted, is a separate manual pass Mike does himself afterward so nothing
-gets silently rewritten.
+Single script, `transcribe.py`. It calls the `faster-whisper` Python API directly, wrapping
+`WhisperModel` in a `BatchedInferencePipeline` for GPU throughput - no subprocess, no
+cleanup/summarization step. Cleanup, if wanted, is a separate manual pass Mike does himself
+afterward so nothing gets silently rewritten.
 
 ## File map
 - `transcribe.py` - the whole tool. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR)`
-  runs `WhisperModel(model, device="cuda", compute_type="int8").transcribe(...)` and writes
-  one segment's text per line to `<output_dir>/<video stem>.txt`. `output_dir` defaults to
+  builds `WhisperModel(model, device="cuda", compute_type="int8")`, wraps it in
+  `BatchedInferencePipeline`, and calls `.transcribe(..., batch_size=16)`, writing one
+  segment's text per line to `<output_dir>/<video stem>.txt`. `output_dir` defaults to
   `C:\Coding\video-transcriber\transcripts` but can be overridden with `--output-dir`.
 
 ## Key decisions
@@ -43,4 +44,5 @@ quality - see DECISIONS.md for the switch and why torch wasn't tried first.
   was still torch-based and much heavier; `faster-whisper` alone is light enough that a
   venv would be cheap too, but there was no reason to add one once things worked).
 - A 17-minute clip on this GPU with the `medium` model + `int8` took ~90 seconds (vs.
-  ~5-6 minutes with the old `openai-whisper` CLI path).
+  ~5-6 minutes with the old `openai-whisper` CLI path). Since switching to
+  `BatchedInferencePipeline` (batch_size=16), it's faster still - see DECISIONS.md.

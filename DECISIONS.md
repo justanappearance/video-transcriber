@@ -122,3 +122,21 @@
   that line is ever removed, everything in it would be eligible for `git add`. Don't remove
   it without re-reading this entry.
 - Date: 2026-07-24
+
+## Switched to BatchedInferencePipeline instead of plain WhisperModel.transcribe
+- Decision: `transcribe.py` wraps the existing `WhisperModel` in `faster-whisper`'s
+  `BatchedInferencePipeline` and calls `.transcribe(..., batch_size=16)` instead of calling
+  `WhisperModel.transcribe(...)` directly.
+- Why: Mike asked if the record → sync → transcribe loop could be faster overall. The
+  Syncthing upload leg isn't something this tool can affect, but transcription is. Plain
+  `WhisperModel.transcribe` processes VAD-detected speech chunks one at a time on the GPU;
+  `BatchedInferencePipeline` runs them through the GPU in batches instead, which is a real
+  throughput win with no accuracy tradeoff (it changes scheduling, not the model or
+  quantization). Verified by re-transcribing an already-transcribed video and comparing
+  output: word count came out within ~3% (1852 vs. 1904 words), consistent with normal
+  VAD-boundary variance rather than a quality regression.
+- Rejected: dropping to the `small` model for speed instead.
+- Why rejected: that trades away accuracy, which matters more here than for footage-triage's
+  quick-classification use case (see the first entry in this file) - batching gets a speed
+  win without that tradeoff, so it's strictly better for this use case.
+- Date: 2026-07-30
