@@ -9,9 +9,10 @@ See DECISIONS.md for why, and for the GPU compute-type gotcha on Pascal-era card
 import argparse
 from pathlib import Path
 
-from faster_whisper import WhisperModel
+from faster_whisper import WhisperModel, BatchedInferencePipeline
 
 DEFAULT_MODEL = "medium"
+BATCH_SIZE = 16
 
 # Lives inside the repo now (Mike consolidated everything under C:\Coding), but this repo
 # is public on GitHub - transcripts are personal and must never be committed. Protected via
@@ -22,7 +23,8 @@ TRANSCRIPTS_DIR = Path(r"C:\Coding\video-transcriber\transcripts")
 def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = TRANSCRIPTS_DIR) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     whisper_model = WhisperModel(model, device="cuda", compute_type="int8")
-    segments, _ = whisper_model.transcribe(str(video_path), language="en")
+    batched_model = BatchedInferencePipeline(model=whisper_model)
+    segments, _ = batched_model.transcribe(str(video_path), language="en", batch_size=BATCH_SIZE)
     out_path = output_dir / (video_path.stem + ".txt")
     with out_path.open("w", encoding="utf-8") as f:
         for segment in segments:
