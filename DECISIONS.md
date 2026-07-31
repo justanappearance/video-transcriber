@@ -140,3 +140,27 @@
   quick-classification use case (see the first entry in this file) - batching gets a speed
   win without that tradeoff, so it's strictly better for this use case.
 - Date: 2026-07-30
+
+## Video journals now auto-transcribe via watch-inbox.ps1, reversing the earlier manual-only decision
+- Decision: `C:\Videos\scripts\automatic\watch-inbox.ps1` now calls `transcribe.py`
+  automatically (via `Start-Process python transcribe.py <dest> -WindowStyle Hidden`,
+  output logged to `C:\Videos\scripts\logs\transcribe-auto.log`) the moment it detects and
+  moves a "video journal" (10+ min camera video) into `backlog\phone\`. This lives in the
+  watcher script, not this repo, but it's this repo's script being invoked, so it's logged
+  here too.
+- Why: on 2026-07-26 Mike explicitly said he only wanted specific files transcribed on
+  request, not every journal automatically. On 2026-07-31 he reversed that once the pattern
+  became clear in practice: "i find myself basically automatically using the video
+  transcriber every time i take a video journal" - the manual-ask step had become pure
+  overhead, not a meaningful gate. This is a reversal of a real prior decision, not a new
+  one from scratch - see the entry two above (BatchedInferencePipeline) and watch-inbox.ps1
+  git history around 2026-07-26 for the original manual-only reasoning.
+- Rejected: keeping it manual (2026-07-26 status quo); a signal-file / "watch for this one"
+  mechanism for the halfway case of "auto-transcribe just this next one."
+- Why rejected: former was the exact overhead Mike was trying to eliminate; the halfway
+  mechanism is more moving parts than needed now that "always" is the actual usage pattern.
+- Caution for later: if this ever misfires (a long non-journal camera video), the fix is to
+  tighten `$journalMinDurationSecs` or add real speech-detection in watch-inbox.ps1, not to
+  revert this decision - re-check with Mike before reverting to manual-only, since that was
+  explicitly superseded by his own stated usage pattern, not by a bug.
+- Date: 2026-07-31

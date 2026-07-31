@@ -23,11 +23,15 @@ afterward so nothing gets silently rewritten.
   `C:\Coding\video-transcriber\transcripts` but can be overridden with `--output-dir`.
 
 ## Usage note
-When Mike asks to "transcribe the most recent file" (or similar, without naming a specific
-path), that means the newest file in `C:\Videos\footage\backlog\phone\` - that's where
-synced phone videos land (see [[project_video_workflow]] in Claude's memory for the full
-pipeline). Check that folder's contents sorted by modified time rather than asking which
-file he means.
+As of 2026-07-31, `C:\Videos\scripts\automatic\watch-inbox.ps1` auto-calls this script the
+moment it detects and moves a "video journal" (10+ min camera video) into
+`C:\Videos\footage\backlog\phone\` - see that repo's README.md and the watcher script's own
+comments. So a freshly-synced journal is often already transcribed by the time Mike asks.
+When he still asks to "transcribe the most recent file" (e.g. for an older backlog file, or
+if the auto-run failed - check `C:\Videos\scripts\logs\transcribe-auto.log`), that means the
+newest file in `C:\Videos\footage\backlog\phone\` (see [[project_video_workflow]] in
+Claude's memory for the full pipeline). Check that folder's contents sorted by modified time
+rather than asking which file he means.
 
 ## Key decisions
 See DECISIONS.md. Short version: full transcript fidelity (not fast keyword
