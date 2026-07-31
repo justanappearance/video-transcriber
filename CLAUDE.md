@@ -22,6 +22,13 @@ afterward so nothing gets silently rewritten.
   segment's text per line to `<output_dir>/<video stem>.txt`. `output_dir` defaults to
   `C:\Coding\video-transcriber\transcripts` but can be overridden with `--output-dir`.
 
+## Usage note
+When Mike asks to "transcribe the most recent file" (or similar, without naming a specific
+path), that means the newest file in `C:\Videos\footage\backlog\phone\` - that's where
+synced phone videos land (see [[project_video_workflow]] in Claude's memory for the full
+pipeline). Check that folder's contents sorted by modified time rather than asking which
+file he means.
+
 ## Key decisions
 See DECISIONS.md. Short version: full transcript fidelity (not fast keyword
 classification from short samples, which is what the sibling `footage-triage` project
