@@ -55,5 +55,11 @@ quality - see DECISIONS.md for the switch and why torch wasn't tried first.
   was still torch-based and much heavier; `faster-whisper` alone is light enough that a
   venv would be cheap too, but there was no reason to add one once things worked).
 - A 17-minute clip on this GPU with the `medium` model + `int8` took ~90 seconds (vs.
-  ~5-6 minutes with the old `openai-whisper` CLI path). Since switching to
-  `BatchedInferencePipeline` (batch_size=16), it's faster still - see DECISIONS.md.
+  ~5-6 minutes with the old `openai-whisper` CLI path). Batching (`BatchedInferencePipeline`)
+  makes it faster still - see DECISIONS.md.
+- **`BATCH_SIZE` is 4, not something larger.** It was originally 16, but that OOM'd on a
+  real 31-minute video - `BatchedInferencePipeline` pads every segment in a batch to the
+  longest one, so a batch with a couple of unusually long rambling segments (this tool's
+  normal input) can spike VRAM well past what a short test clip suggested. If you're
+  tempted to raise it for speed, re-verify against a long (30+ min) video first, not just
+  a short one - see DECISIONS.md.

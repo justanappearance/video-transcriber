@@ -164,3 +164,26 @@
   revert this decision - re-check with Mike before reverting to manual-only, since that was
   explicitly superseded by his own stated usage pattern, not by a bug.
 - Date: 2026-07-31
+
+## Reduced BATCH_SIZE from 16 to 4 after a real CUDA OOM on a 31-minute video
+- Decision: `BATCH_SIZE` in `transcribe.py` is now `4`, not `16`.
+- Why: the 2026-07-30 batching change was verified on a ~17-minute clip only. The first
+  real-world auto-transcribe run on a 31-minute video (2026-07-31, via the new watcher
+  auto-trigger) crashed with `RuntimeError: CUDA failed with error out of memory` inside
+  `generate_segment_batched`. `BatchedInferencePipeline` pads every segment in a batch to
+  the length of the longest segment in that batch - a batch that happens to contain a
+  couple of unusually long VAD-detected segments (e.g. a long uninterrupted ramble, which
+  is exactly this tool's normal input) can spike memory far past what a shorter test video
+  showed, even though `batch_size` itself is unchanged. This is a real capacity limit on
+  this 6GB Pascal card, not a fluke - confirmed the fix by re-running the same 31-minute
+  video at `batch_size=4` end-to-end successfully (3154 words, clean ending, no truncation).
+- Rejected: keeping `batch_size=16`; reverting to plain `WhisperModel.transcribe` (no
+  batching at all).
+- Why rejected: former just OOMs again on the next long enough ramble; latter throws away
+  the real speedup batching still gives at a smaller batch size - `4` still batches, just
+  fewer segments at once, so there's no accuracy cost either way (same tradeoff analysis as
+  the original batching entry above).
+- Caution for later: this is a padding/memory-spike issue, not a hard formula - if OOM
+  happens again even at `batch_size=4` (e.g. on an even longer or more continuous
+  recording), drop further before assuming something else broke.
+- Date: 2026-07-31

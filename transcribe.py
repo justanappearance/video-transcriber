@@ -12,7 +12,10 @@ from pathlib import Path
 from faster_whisper import WhisperModel, BatchedInferencePipeline
 
 DEFAULT_MODEL = "medium"
-BATCH_SIZE = 16
+# 16 OOM'd on a 31-min video (6GB Pascal card) - BatchedInferencePipeline pads every
+# segment in a batch to the longest one, so a batch containing a couple of unusually long
+# VAD segments can spike memory well past what the 17-min test clip showed. See DECISIONS.md.
+BATCH_SIZE = 4
 
 # Lives inside the repo now (Mike consolidated everything under C:\Coding), but this repo
 # is public on GitHub - transcripts are personal and must never be committed. Protected via
