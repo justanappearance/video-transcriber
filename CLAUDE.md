@@ -19,8 +19,11 @@ afterward so nothing gets silently rewritten.
 - `transcribe.py` - the whole tool. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR)`
   builds `WhisperModel(model, device="cuda", compute_type="int8")`, wraps it in
   `BatchedInferencePipeline`, and calls `.transcribe(..., batch_size=16)`, writing one
-  segment's text per line to `<output_dir>/<video stem>.txt`. `output_dir` defaults to
-  `C:\Coding\video-transcriber\transcripts` but can be overridden with `--output-dir`.
+  segment's text per line to `<output_dir>/<video stem>.txt`. Also writes
+  `<output_dir>/<video stem>.json` (list of `{start, end, text}` per segment, since
+  2026-08-08 - see DECISIONS.md) for consumers that need timing, not just the plain text.
+  `output_dir` defaults to `C:\Coding\video-transcriber\transcripts` but can be overridden
+  with `--output-dir`.
 
 ## Usage note
 As of 2026-07-31, `C:\Videos\scripts\automatic\watch-inbox.ps1` auto-calls this script the

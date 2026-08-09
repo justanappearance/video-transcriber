@@ -187,3 +187,17 @@
   happens again even at `batch_size=4` (e.g. on an even longer or more continuous
   recording), drop further before assuming something else broke.
 - Date: 2026-07-31
+
+## Also save a timestamped JSON alongside the plain-text transcript
+- Decision: `transcribe()` now writes `<stem>.json` (list of `{start, end, text}` per
+  segment) next to the existing `<stem>.txt`, unconditionally.
+- Why: the `video-journal-auto-cut` project needs to align individual transcript segments
+  back to specific timestamps in the raw footage (to test whether an LLM reading the
+  transcript can predict which segments Mike actually kept when editing) - the plain-text
+  output alone has no timing information at all.
+- Rejected: a separate transcription script inside `video-journal-auto-cut` that duplicates
+  the whisper-loading/GPU setup here.
+- Why rejected: this tool already owns "turn a video into a transcript" - adding timestamps
+  to its output is a generically useful, backward-compatible extension (the .txt output is
+  byte-for-byte unchanged), not a new concern that belongs in a different project.
+- Date: 2026-08-08

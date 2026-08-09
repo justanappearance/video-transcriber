@@ -7,6 +7,7 @@ See DECISIONS.md for why, and for the GPU compute-type gotcha on Pascal-era card
 """
 
 import argparse
+import json
 from pathlib import Path
 
 from faster_whisper import WhisperModel, BatchedInferencePipeline
@@ -28,10 +29,22 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
     whisper_model = WhisperModel(model, device="cuda", compute_type="int8")
     batched_model = BatchedInferencePipeline(model=whisper_model)
     segments, _ = batched_model.transcribe(str(video_path), language="en", batch_size=BATCH_SIZE)
+
     out_path = output_dir / (video_path.stem + ".txt")
+    # Also save timestamps alongside the plain-text transcript - added for the
+    # video-journal-auto-cut project, which needs to align transcript segments back to
+    # specific points in the raw footage. The plain .txt output is untouched (still the
+    # thing Mike pastes into a chat), this is purely additive.
+    json_path = output_dir / (video_path.stem + ".json")
+    segments = list(segments)  # segments is a generator - only consumable once
     with out_path.open("w", encoding="utf-8") as f:
         for segment in segments:
             f.write(segment.text.strip() + "\n")
+    with json_path.open("w", encoding="utf-8") as f:
+        json.dump(
+            [{"start": s.start, "end": s.end, "text": s.text.strip()} for s in segments],
+            f, indent=2,
+        )
     return out_path
 
 
