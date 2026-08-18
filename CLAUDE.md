@@ -19,15 +19,12 @@ afterward so nothing gets silently rewritten.
 - `transcribe.py` - the whole tool. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR)`
   builds `WhisperModel(model, device="cuda", compute_type="int8")`, wraps it in
   `BatchedInferencePipeline`, and calls `.transcribe(..., batch_size=4)`, writing one
-  segment's text per line to `<output_dir>/<video stem>.txt`. Also writes
-  `<output_dir>/<video stem>.json` (list of `{start, end, text}` per segment, since
-  2026-08-08 - see DECISIONS.md) - this is read directly by `C:\Coding\video-journal-auto-cut`
-  (several scripts there hardcode `TRANSCRIPTS_DIR` to this exact folder), so don't move it
-  out from beside the `.txt` without updating those refs too. Both output files get their
-  mtime stamped to the source video's own recording time, not whenever the script happened
-  to run - see DECISIONS.md ("Output files are stamped with the video's own recording time").
-  `output_dir` defaults to `C:\Coding\video-transcriber\transcripts` but can be overridden
-  with `--output-dir`.
+  segment's text per line to `<output_dir>/<video stem>.txt`. That file's mtime is stamped to
+  the source video's own recording time, not whenever the script happened to run - see
+  DECISIONS.md ("Output files are stamped with the video's own recording time"). `output_dir`
+  defaults to `C:\Coding\video-transcriber\transcripts` but can be overridden with `--output-dir`.
+  (Used to also write a per-segment `.json` for `video-journal-auto-cut` - removed 2026-08-18
+  when that project was scrapped. See DECISIONS.md if segment timestamps are needed again.)
 
 ## Usage note
 As of 2026-07-31, `C:\Videos\scripts\automatic\watch-inbox.ps1` auto-calls this script the

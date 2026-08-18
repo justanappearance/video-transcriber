@@ -226,3 +226,22 @@
   for any script that reads the folder by mtime, and requires remembering to change the sort
   column - a file-level fix is permanent and needs no ongoing behavior change from Mike.
 - Date: 2026-08-18
+
+## Removed the per-segment JSON output entirely - video-journal-auto-cut was scrapped
+- Decision: `transcribe()` no longer writes `<stem>.json` at all - only `<stem>.txt`. Deleted
+  all 38 `.json` files that existed in `transcripts/`.
+- Why: the JSON's only reason to exist (see the 2026-08-08 entry above) was
+  `C:\Coding\video-journal-auto-cut`, which read it directly via a hardcoded `TRANSCRIPTS_DIR`
+  in several of its scripts. Mike scrapped that project (2026-08-18), so the JSON had no
+  remaining consumer - it was dead output, not backward-compat surface worth preserving.
+  Came up while fixing the transcripts-folder ordering issue (previous entry): Mike asked
+  whether the `.json` files could be moved out of the way, which would have meant updating
+  6 references in a project that turned out to no longer be in use at all.
+- Rejected: moving the JSON to a subfolder instead of deleting the feature outright (the
+  original ask).
+- Why rejected: once video-journal-auto-cut is confirmed dead, there's no reason to keep
+  generating output nothing reads - reorganizing dead output is more work than removing it.
+- Caution for later: if segment-level timestamps are ever needed again (e.g. a new project
+  wants to align transcript text back to footage), this is a ~10-line re-add - see git
+  history around 2026-08-08 for the original implementation, don't design it from scratch.
+- Date: 2026-08-18
