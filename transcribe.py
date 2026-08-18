@@ -8,6 +8,9 @@ See DECISIONS.md for why, and for the GPU compute-type gotcha on Pascal-era card
 
 import argparse
 import json
+import os
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 from faster_whisper import WhisperModel, BatchedInferencePipeline
@@ -22,6 +25,26 @@ BATCH_SIZE = 4
 # is public on GitHub - transcripts are personal and must never be committed. Protected via
 # .gitignore (transcripts/), not by keeping the folder outside the repo. See DECISIONS.md.
 TRANSCRIPTS_DIR = Path(r"C:\Coding\video-transcriber\transcripts")
+
+
+def _recording_timestamp(video_path: Path) -> float:
+    """Phone videos embed a real creation_time tag - use that for the output files'
+    mtimes instead of leaving them at "whenever transcribe.py happened to run". Some
+    journals now auto-transcribe the instant they land, others sit until Mike asks for
+    them by hand days later, which used to scramble the transcripts folder's Date
+    Modified order relative to actual recording order. Falls back to the video file's
+    own mtime if the tag is missing (e.g. a re-encoded or non-phone source)."""
+    try:
+        out = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format_tags=creation_time",
+             "-of", "default=noprint_wrappers=1:nokey=1", str(video_path)],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        if out:
+            return datetime.strptime(out, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc).timestamp()
+    except Exception:
+        pass
+    return video_path.stat().st_mtime
 
 
 def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = TRANSCRIPTS_DIR) -> Path:
@@ -45,6 +68,10 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
             [{"start": s.start, "end": s.end, "text": s.text.strip()} for s in segments],
             f, indent=2,
         )
+
+    recorded_at = _recording_timestamp(video_path)
+    os.utime(out_path, (recorded_at, recorded_at))
+    os.utime(json_path, (recorded_at, recorded_at))
     return out_path
 
 

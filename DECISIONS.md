@@ -201,3 +201,28 @@
   to its output is a generically useful, backward-compatible extension (the .txt output is
   byte-for-byte unchanged), not a new concern that belongs in a different project.
 - Date: 2026-08-08
+
+## Output files are stamped with the video's own recording time, not whenever transcribe.py ran
+- Decision: after writing `<stem>.txt`/`<stem>.json`, `transcribe()` sets both files' mtime
+  to the source video's embedded `creation_time` (read via `ffprobe format_tags=creation_time`),
+  falling back to the video file's own mtime if that tag is missing.
+- Why: Mike noticed the transcripts folder sorted by Date Modified no longer matched
+  recording order. Root cause: some journals now come in under the 10-min auto-transcribe
+  threshold (see the two entries above - that threshold was tuned for a duration heuristic,
+  not "is this actually a journal"), so they sit untranscribed until he asks by hand, often
+  days later - while other journals auto-transcribe the instant they land. The transcript's
+  mtime reflected *when transcribe.py happened to run*, not when the video was recorded, so
+  Date-Modified sort scrambled relative to actual recording order once both paths were live
+  at once. Stamping from the video's own embedded timestamp fixes this regardless of which
+  path produced the transcript or how late it ran.
+- Also backfilled all 58 pre-existing transcripts: 43 by reading `creation_time` off their
+  still-present source video (found by recursive stem search under `C:\Videos\footage`), 15
+  more whose source video no longer existed anywhere under `C:\Videos` (already
+  triaged/deleted) by parsing the capture timestamp directly out of the Pixel filename
+  convention (`PXL_YYYYMMDD_HHMMSSmmm`, UTC) instead.
+- Rejected: telling Mike to just sort the folder by Name instead of Date Modified (filenames
+  already sort chronologically since they embed the same timestamp).
+- Why rejected: works for him browsing in Explorer, but doesn't fix directory-listing order
+  for any script that reads the folder by mtime, and requires remembering to change the sort
+  column - a file-level fix is permanent and needs no ongoing behavior change from Mike.
+- Date: 2026-08-18
