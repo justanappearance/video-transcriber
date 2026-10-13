@@ -13,6 +13,7 @@ import subprocess
 import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 
 from faster_whisper import WhisperModel, BatchedInferencePipeline
 
@@ -86,6 +87,20 @@ def _is_phrase_start(word_text: str) -> bool:
     return bool(stripped) and stripped[0].isupper() and not _PRONOUN_I.match(stripped)
 
 
+def _merge_split_words(words):
+    """Whisper sometimes emits one word as several tokens (e.g. " self" + "-control"). Every
+    real word starts with a space, so a token without one is a continuation of the previous
+    word - merge it back so a cue can never end mid-word."""
+    merged = []
+    for word in words:
+        if merged and not word.word[:1].isspace():
+            prev = merged[-1]
+            merged[-1] = SimpleNamespace(word=prev.word + word.word, start=prev.start, end=word.end)
+        else:
+            merged.append(SimpleNamespace(word=word.word, start=word.start, end=word.end))
+    return merged
+
+
 def _chunk_words_into_captions(words, max_chars: int = MAX_CAPTION_CHARS):
     """Groups word-level timestamps into caption cues. A cue ends before any word that
     starts a new phrase (so the tail of one sentence never shares a cue with the start of
@@ -124,7 +139,7 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
             txt_f.write(segment.text.strip() + "\n")
             all_words.extend(segment.words)
 
-    chunks = _chunk_words_into_captions(all_words)
+    chunks = _chunk_words_into_captions(_merge_split_words(all_words))
     with srt_path.open("w", encoding="utf-8") as srt_f:
         for i, chunk in enumerate(chunks, start=1):
             text = "".join(w.word for w in chunk).strip()

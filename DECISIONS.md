@@ -329,3 +329,14 @@
   on the test file). No punctuation means no reliable way to tell them apart.
 - Verified: re-ran on `Oct 10 at 9-11 PM.wav` - phrase boundaries now separate cues.
 - Date: 2026-10-12
+
+## Merge Whisper's split word tokens before chunking captions
+- Decision: `_merge_split_words` joins any word token that doesn't start with a space onto the
+  previous token (text concatenated, start of the first, end of the last) before
+  `_chunk_words_into_captions` runs.
+- Why: Mike, 2026-10-12: "self-control" came out as " self" + "-control", and the chunker
+  split them across two cues. Real word tokens always start with a space, so a token without
+  one is a continuation.
+- Verified: re-ran on `Oct 10 at 9-11 PM.wav` - "self-control type shit" is one cue; all
+  other cues unchanged.
+- Date: 2026-10-12
