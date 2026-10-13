@@ -24,6 +24,14 @@ from faster_whisper import WhisperModel, BatchedInferencePipeline
 MAX_CAPTION_CHARS = 90
 MAX_CAPTION_LINE_CHARS = 38
 
+# A cue's on-screen time is the longer of (a) how long it actually took Mike to say it and
+# (b) how long it takes to read, at READING_CHARS_PER_SECOND - fast speech on a long cue
+# would otherwise flash by unreadably. Netflix's English subtitle style guide (the most
+# commonly cited public reading-speed standard) caps adult content at 20 CPS and sets a
+# 5/6-second minimum per cue - used here as-is, not re-derived.
+READING_CHARS_PER_SECOND = 20
+MIN_CAPTION_SECONDS = 5 / 6
+
 DEFAULT_MODEL = "medium"
 # 16 OOM'd on a 31-min video (6GB Pascal card) - BatchedInferencePipeline pads every
 # segment in a batch to the longest one, so a batch containing a couple of unusually long
@@ -99,11 +107,17 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
             txt_f.write(segment.text.strip() + "\n")
             all_words.extend(segment.words)
 
+    chunks = _chunk_words_into_captions(all_words)
     with srt_path.open("w", encoding="utf-8") as srt_f:
-        for i, chunk in enumerate(_chunk_words_into_captions(all_words), start=1):
+        for i, chunk in enumerate(chunks, start=1):
             text = "".join(w.word for w in chunk).strip()
             lines = "\n".join(textwrap.wrap(text, width=MAX_CAPTION_LINE_CHARS))
-            start, end = chunk[0].start, chunk[-1].end
+            start = chunk[0].start
+            spoken_end = chunk[-1].end
+            readable_end = start + max(MIN_CAPTION_SECONDS, len(text) / READING_CHARS_PER_SECOND)
+            end = max(spoken_end, readable_end)
+            if i < len(chunks):
+                end = max(spoken_end, min(end, chunks[i][0].start))
             srt_f.write(f"{i}\n{_srt_timestamp(start)} --> {_srt_timestamp(end)}\n{lines}\n\n")
 
     recorded_at = _recording_timestamp(video_path)

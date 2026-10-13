@@ -24,7 +24,11 @@ afterward so nothing gets silently rewritten.
   segments - `_chunk_words_into_captions()` groups words into ~`MAX_CAPTION_CHARS` (90)
   chunks, wrapped to `MAX_CAPTION_LINE_CHARS` (38) per line, matching CapCut's observed
   auto-caption sizing (for importing as captions in DaVinci Resolve - File > Import >
-  Subtitle). Both files' mtimes are stamped to the source video's own recording time, not
+  Subtitle). Each cue's display duration is then raised to at least a reading-speed floor
+  (`READING_CHARS_PER_SECOND` = 20, `MIN_CAPTION_SECONDS` = 5/6 - Netflix's style-guide
+  numbers) if the literal spoken duration would be too short to read, clamped to never
+  overlap the next cue. Both files' mtimes are stamped to the source video's own recording
+  time, not
   whenever the script happened to run - see DECISIONS.md ("Output files are stamped with
   the video's own recording time"). `output_dir` defaults to
   `C:\Coding\video-transcriber\transcripts` but can be overridden with `--output-dir`.

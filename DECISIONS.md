@@ -285,3 +285,20 @@
   follow-up ask before it was ever committed.
 - Verified: re-ran on `Oct 10 at 9-11 PM.wav`.
 - Date: 2026-10-12
+
+## Cue duration also respects reading speed, not just how long Mike took to say it
+- Decision: each cue's end time is now `max(spoken_end, start + max(MIN_CAPTION_SECONDS,
+  len(text) / READING_CHARS_PER_SECOND))`, clamped to never run past the next cue's start.
+  `READING_CHARS_PER_SECOND = 20` and `MIN_CAPTION_SECONDS = 5/6` are Netflix's English
+  subtitle style guide numbers (adult-content reading speed and minimum cue duration) - the
+  most commonly cited public reading-speed standard, used as-is rather than re-derived.
+- Why: Mike, 2026-10-12, after seeing CapCut's fixed-character-count chunking: "the fact
+  that display time is reading speed based if we could implement that that'd be cool" -
+  without this, a short cue spoken very fast would flash by before it's readable, even
+  though the text itself is within the character cap.
+- Verified: synthetic test (20 words at 0.1s each, 2s spoken duration, 129 chars of text) -
+  cue extended to 6.45s, matching the reading-speed floor instead of the literal 2s spoken
+  duration. On the real test file (`Oct 10 at 9-11 PM.wav`) this made no visible difference,
+  since Mike talks fast enough that every real cue already exceeded the reading-speed
+  minimum - the floor only kicks in when needed.
+- Date: 2026-10-12
