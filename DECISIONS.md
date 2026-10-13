@@ -302,3 +302,15 @@
   since Mike talks fast enough that every real cue already exceeded the reading-speed
   minimum - the floor only kicks in when needed.
 - Date: 2026-10-12
+
+## Caption chunk size cut from CapCut's 90/38 to 24/24 (one short line, not 2-3 stacked)
+- Decision: `MAX_CAPTION_CHARS` and `MAX_CAPTION_LINE_CHARS` both dropped to 24 (was 90/38).
+- Why: Mike, 2026-10-12, after importing the `.srt` and looking at it live in Resolve: "can
+  you see how much text is on the screen it's a lot" (screenshot showed a 3-line stacked
+  caption covering a third of the vertical frame). CapCut's 90-char/38-per-line numbers are
+  tuned for CapCut's own smaller default caption font - at the large font size Mike's using,
+  the same char counts wrap into 2-3 stacked lines that read as a wall of text, not a punchy
+  single-line caption.
+- Verified: re-ran on `Oct 10 at 9-11 PM.wav` - 18 single-line cues instead of 5 stacked
+  3-line blocks, ~4-5 words each.
+- Date: 2026-10-12

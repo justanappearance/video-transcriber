@@ -17,12 +17,14 @@ from faster_whisper import WhisperModel, BatchedInferencePipeline
 
 # Caption cues for the .srt are capped at these sizes (word-level timestamps, not Whisper's
 # own segments - a segment can run 20-30s on Mike's rambling-talk recordings, too long to
-# read as an on-screen caption). Numbers match CapCut's auto-captions (the social-caption
-# style Mike's going for) by observation - CapCut doesn't publish a spec - so treat these as
-# a starting point to adjust, not a fixed target. The .txt output is unaffected, still one
-# line per Whisper segment.
-MAX_CAPTION_CHARS = 90
-MAX_CAPTION_LINE_CHARS = 38
+# read as an on-screen caption). Started at CapCut's observed 90/38 (its own auto-caption
+# sizing), but at the large font size Mike's vertical-video subtitle style uses, 90 chars
+# wrapped into 2-3 stacked lines read as "a lot of text on screen" (his words, 2026-10-12,
+# after seeing it live in Resolve) - cut down to a single short punchy line instead. Treat
+# these as a starting point to adjust, not a fixed target. The .txt output is unaffected,
+# still one line per Whisper segment.
+MAX_CAPTION_CHARS = 24
+MAX_CAPTION_LINE_CHARS = 24
 
 # A cue's on-screen time is the longer of (a) how long it actually took Mike to say it and
 # (b) how long it takes to read, at READING_CHARS_PER_SECOND - fast speech on a long cue
