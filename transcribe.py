@@ -8,6 +8,7 @@ See DECISIONS.md for why, and for the GPU compute-type gotcha on Pascal-era card
 
 import argparse
 import os
+import re
 import subprocess
 import textwrap
 from datetime import datetime, timezone
@@ -74,15 +75,29 @@ def _srt_timestamp(seconds: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{secs:02d},{ms:03d}"
 
 
+_PRONOUN_I = re.compile(r"^i(?:'(?:m|ve|ll|d))?$", re.IGNORECASE)
+
+
+def _is_phrase_start(word_text: str) -> bool:
+    """Whisper mostly drops sentence-ending punctuation on Mike's rambling recordings but
+    still capitalizes the first word of each new phrase - the only boundary signal left.
+    "I"/"I'm"/"I've"/etc. are excluded since they're capitalized anywhere in a sentence."""
+    stripped = word_text.strip()
+    return bool(stripped) and stripped[0].isupper() and not _PRONOUN_I.match(stripped)
+
+
 def _chunk_words_into_captions(words, max_chars: int = MAX_CAPTION_CHARS):
-    """Groups word-level timestamps into caption-sized chunks, each capped at `max_chars`
-    characters of text - starts a new chunk rather than let one run longer, so a single
-    very long word still gets its own chunk instead of being split mid-word."""
+    """Groups word-level timestamps into caption cues. A cue ends before any word that
+    starts a new phrase (so the tail of one sentence never shares a cue with the start of
+    the next), or before a word that would push it past `max_chars` - the backstop for a
+    long run-on phrase. Never splits mid-word."""
     chunks = []
     current = []
     current_chars = 0
     for word in words:
-        if current and current_chars + len(word.word) > max_chars:
+        starts_new_phrase = _is_phrase_start(word.word)
+        over_budget = current_chars + len(word.word) > max_chars
+        if current and (starts_new_phrase or over_budget):
             chunks.append(current)
             current = []
             current_chars = 0

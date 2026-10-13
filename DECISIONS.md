@@ -314,3 +314,18 @@
 - Verified: re-ran on `Oct 10 at 9-11 PM.wav` - 18 single-line cues instead of 5 stacked
   3-line blocks, ~4-5 words each.
 - Date: 2026-10-12
+
+## Caption cues also break at phrase starts (capitalized words), not just the char cap
+- Decision: `_chunk_words_into_captions` ends the current cue before any word
+  `_is_phrase_start` flags (first letter uppercase, excluding "I"/"I'm"/"I've"/"I'll"/"I'd"),
+  in addition to the existing `MAX_CAPTION_CHARS` backstop.
+- Why: Mike, 2026-10-12: Whisper drops most sentence punctuation on his recordings but still
+  capitalizes each new phrase; a pure char cap spliced the tail of one sentence onto the start
+  of the next in one cue (e.g. "flag So y'all I've").
+- Rejected: forcing a line break inside the cue at the phrase start instead of a new cue.
+- Why rejected: Mike's fine with one line per cue; a new cue fixes the root cause (cue
+  boundaries ignoring phrases) rather than reflowing text inside a badly-cut cue.
+- Known tradeoff: proper nouns also capitalize, so names split cues too ("God", "Cooper"
+  on the test file). No punctuation means no reliable way to tell them apart.
+- Verified: re-ran on `Oct 10 at 9-11 PM.wav` - phrase boundaries now separate cues.
+- Date: 2026-10-12
