@@ -245,3 +245,22 @@
   wants to align transcript text back to footage), this is a ~10-line re-add - see git
   history around 2026-08-08 for the original implementation, don't design it from scratch.
 - Date: 2026-08-18
+
+## Added `.srt` output alongside `.txt` - segment timestamps needed again, for captions
+- Decision: `transcribe()` now also writes `<stem>.srt` (standard numbered-cue format with
+  `HH:MM:SS,mmm --> HH:MM:SS,mmm` timestamps) next to the existing `<stem>.txt`, from the
+  same pass over `segments` - no second transcription run, no new dependency (plain string
+  formatting of `segment.start`/`segment.end`, already on every segment object).
+- Why: Mike, 2026-10-12: wants on-screen captions burned into his "quitting the internet"
+  daily videos, DaVinci Resolve-style (File > Import > Subtitle needs a real `.srt` with
+  timestamps, not flat text). This is the "segment-level timestamps needed again" case the
+  2026-08-18 entry above flagged - a different consumer (Resolve's subtitle import) than the
+  one that was removed (video-journal-auto-cut), so re-added as `.srt` specifically rather
+  than restoring the old per-segment `.json` shape, which had no consumer that wanted JSON.
+- Verified: re-ran on `Oct 10 at 9-11 PM.wav` - both files appeared in `transcripts/` with
+  matching text; `.srt` timestamps looked sane against the file's actual 36.9s duration.
+- Known limitation: Whisper's segments can be long (one came out as a single 28-second cue
+  on this test file) - fine for Resolve's basic subtitle import, but not short caption-sized
+  chunks. Not addressed here since it wasn't asked for - flagged to Mike in case he wants
+  segment-splitting later.
+- Date: 2026-10-12

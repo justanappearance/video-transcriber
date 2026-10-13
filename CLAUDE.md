@@ -19,12 +19,15 @@ afterward so nothing gets silently rewritten.
 - `transcribe.py` - the whole tool. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR)`
   builds `WhisperModel(model, device="cuda", compute_type="int8")`, wraps it in
   `BatchedInferencePipeline`, and calls `.transcribe(..., batch_size=4)`, writing one
-  segment's text per line to `<output_dir>/<video stem>.txt`. That file's mtime is stamped to
-  the source video's own recording time, not whenever the script happened to run - see
+  segment's text per line to `<output_dir>/<video stem>.txt`, and the same segments as a
+  standard `<output_dir>/<video stem>.srt` (for importing as captions in DaVinci Resolve -
+  File > Import > Subtitle) via `_srt_timestamp()`. Both files' mtimes are stamped to the
+  source video's own recording time, not whenever the script happened to run - see
   DECISIONS.md ("Output files are stamped with the video's own recording time"). `output_dir`
   defaults to `C:\Coding\video-transcriber\transcripts` but can be overridden with `--output-dir`.
   (Used to also write a per-segment `.json` for `video-journal-auto-cut` - removed 2026-08-18
-  when that project was scrapped. See DECISIONS.md if segment timestamps are needed again.)
+  when that project was scrapped; `.srt` added back 2026-10-12 for a different consumer
+  (Resolve's subtitle import) - see DECISIONS.md.)
 
 ## Usage note
 As of 2026-07-31, `C:\Videos\scripts\automatic\watch-inbox.ps1` auto-calls this script the

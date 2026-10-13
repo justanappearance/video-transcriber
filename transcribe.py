@@ -46,6 +46,14 @@ def _recording_timestamp(video_path: Path) -> float:
     return video_path.stat().st_mtime
 
 
+def _srt_timestamp(seconds: float) -> str:
+    total_ms = round(seconds * 1000)
+    hours, rem = divmod(total_ms, 3_600_000)
+    minutes, rem = divmod(rem, 60_000)
+    secs, ms = divmod(rem, 1000)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d},{ms:03d}"
+
+
 def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = TRANSCRIPTS_DIR) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     whisper_model = WhisperModel(model, device="cuda", compute_type="int8")
@@ -53,12 +61,18 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
     segments, _ = batched_model.transcribe(str(video_path), language="en", batch_size=BATCH_SIZE)
 
     out_path = output_dir / (video_path.stem + ".txt")
-    with out_path.open("w", encoding="utf-8") as f:
-        for segment in segments:
-            f.write(segment.text.strip() + "\n")
+    srt_path = output_dir / (video_path.stem + ".srt")
+    with out_path.open("w", encoding="utf-8") as txt_f, srt_path.open("w", encoding="utf-8") as srt_f:
+        for i, segment in enumerate(segments, start=1):
+            text = segment.text.strip()
+            txt_f.write(text + "\n")
+            srt_f.write(
+                f"{i}\n{_srt_timestamp(segment.start)} --> {_srt_timestamp(segment.end)}\n{text}\n\n"
+            )
 
     recorded_at = _recording_timestamp(video_path)
     os.utime(out_path, (recorded_at, recorded_at))
+    os.utime(srt_path, (recorded_at, recorded_at))
     return out_path
 
 
