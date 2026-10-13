@@ -264,3 +264,24 @@
   chunks. Not addressed here since it wasn't asked for - flagged to Mike in case he wants
   segment-splitting later.
 - Date: 2026-10-12
+
+## .srt cues re-chunked using word-level timestamps, sized to match CapCut's auto-captions
+- Decision: `transcribe()` now calls `.transcribe(..., word_timestamps=True)` and builds the
+  `.srt` from `_chunk_words_into_captions()` - flattens every segment's `.words` into one
+  list, groups them into chunks capped at `MAX_CAPTION_CHARS = 90` characters each (word
+  boundaries only, never mid-word), then wraps each chunk's text to `MAX_CAPTION_LINE_CHARS
+  = 38` per line with `textwrap.wrap`. The `.txt` output is untouched (still one line per
+  Whisper segment - that file is for pasting a full transcript into a Claude chat, where
+  segment length doesn't matter).
+- Why: Mike, 2026-10-12, right after the plain per-segment `.srt` landed: "it has taken
+  basically a 30s clip of me talking and put it in one long thing" - a single Whisper
+  segment as one subtitle cue reads nothing like the short on-screen captions he's going
+  for. First tried a flat 3-second cap per his "maybe 3s intervals" suggestion, but he then
+  asked to match CapCut specifically ("let's use the same characters per caption block,
+  lines, etc, and I'll adjust as needed") - CapCut has no published spec, but is consistently
+  observed landing around 80-100 chars per block, 1-2 lines of ~35-40 chars each. Switched to
+  character-based chunking before committing the 3s version, since nothing depended on it yet.
+- Rejected: keeping the duration-based (3s) chunker. Why rejected: superseded by Mike's own
+  follow-up ask before it was ever committed.
+- Verified: re-ran on `Oct 10 at 9-11 PM.wav`.
+- Date: 2026-10-12
