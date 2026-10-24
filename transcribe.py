@@ -48,6 +48,19 @@ BATCH_SIZE = 4
 # .gitignore (transcripts/), not by keeping the folder outside the repo. See DECISIONS.md.
 TRANSCRIPTS_DIR = Path(r"C:\Coding\video-transcriber\transcripts")
 
+# Words Mike says that Whisper tends to mishear (slang, names), one per line. Passed to
+# Whisper as hotwords - a bias, not a find-and-replace, so a real "hole" can still come out
+# as "hole". Gitignored like transcripts/: it's personal vocabulary in a public repo.
+# Grown by learn_vocabulary.py from Mike's own caption corrections.
+VOCABULARY_PATH = Path(r"C:\Coding\video-transcriber\vocabulary.txt")
+
+
+def load_vocabulary() -> list[str]:
+    if not VOCABULARY_PATH.exists():
+        return []
+    lines = VOCABULARY_PATH.read_text(encoding="utf-8").splitlines()
+    return [line.strip() for line in lines if line.strip() and not line.strip().startswith("#")]
+
 
 def _recording_timestamp(video_path: Path) -> float:
     """Phone videos embed a real creation_time tag - use that for the output files'
@@ -145,8 +158,10 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
     output_dir.mkdir(parents=True, exist_ok=True)
     whisper_model = WhisperModel(model, device="cuda", compute_type="int8")
     batched_model = BatchedInferencePipeline(model=whisper_model)
+    vocabulary = load_vocabulary()
     segments, _ = batched_model.transcribe(
-        str(video_path), language="en", batch_size=BATCH_SIZE, word_timestamps=True
+        str(video_path), language="en", batch_size=BATCH_SIZE, word_timestamps=True,
+        hotwords=" ".join(vocabulary) if vocabulary else None,
     )
 
     out_path = output_dir / (video_path.stem + ".txt")
@@ -164,11 +179,14 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
             srt_f.write(f"{i}\n{_srt_timestamp(cue.start)} --> {_srt_timestamp(cue.end)}\n{lines}\n\n")
 
     # Same cues as the .srt, plus each word's own timing - render_captions.py needs those to
-    # move the highlight box word by word, which an .srt has no way to carry.
+    # move the highlight box word by word, which an .srt has no way to carry. "text" is what
+    # Mike edits to fix a misheard word; "heard" keeps Whisper's original so
+    # learn_vocabulary.py can spot his corrections later.
     captions_path = output_dir / (video_path.stem + ".captions.json")
     captions_path.write_text(json.dumps([
         {"start": cue.start, "end": cue.end,
-         "words": [{"text": w.word.strip(), "start": w.start, "end": w.end} for w in cue.words]}
+         "words": [{"text": w.word.strip(), "heard": w.word.strip(), "start": w.start, "end": w.end}
+                   for w in cue.words]}
         for cue in cues
     ], indent=2), encoding="utf-8")
 

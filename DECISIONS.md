@@ -358,3 +358,21 @@
   39.7s, 1080x1920, yuva444p; composited preview frames show the box on "Hey" at 1.2s and on
   "back" at 2.4s, matching the word timings.
 - Date: 2026-10-24
+
+## Learn Mike's vocabulary from his own caption corrections (hotwords, not replace rules)
+- Decision: a gitignored `vocabulary.txt` is passed to faster-whisper as `hotwords`;
+  `.captions.json` words keep Whisper's original as `"heard"` next to the editable `"text"`, and
+  `learn_vocabulary.py` diffs the two after Mike edits, offering each corrected word for the
+  vocabulary with a y/N confirm.
+- Why: Mike, 2026-10-24, wanted the transcriber to get better from his fixes over time (e.g.
+  Whisper wrote "hole" where he said "hoe").
+- Rejected: automatic find-and-replace rules (hole->hoe would corrupt every real "hole");
+  adding every correction without asking (one-off fixes would pile up as permanent bias);
+  fine-tuning Whisper (far too heavy for the volume of corrections); storing an untouched copy
+  of the original captions file to diff against ("heard" per word is the same info, one file).
+- Known limit, verified on `day 2.wav`: with "hoe" in the vocabulary Whisper STILL wrote "this
+  hole" - hotwords only nudge it, and "this hole" is plausible English on ambiguous gym audio.
+  Expect hotwords to help most with words Whisper doesn't know (slang, names), not with
+  swapping one common word for another. The rest of the transcript only shifted punctuation
+  and one cue boundary. Manual edits remain the fix for cases like this.
+- Date: 2026-10-24
