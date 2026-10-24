@@ -340,3 +340,21 @@
 - Verified: re-ran on `Oct 10 at 9-11 PM.wav` - "self-control type shit" is one cue; all
   other cues unchanged.
 - Date: 2026-10-12
+
+## Highlighted-word captions rendered as a transparent overlay video, not a subtitle file
+- Decision: `render_captions.py` renders `<stem>.captions.json` (per-word timings, written by
+  `transcribe.py` alongside the `.srt`) into a ProRes 4444 `.mov` with alpha, drawn frame by
+  frame with Pillow and piped to ffmpeg. The whole cue stays on screen; a black box sits behind
+  the most recently started word (held through pauses, not cleared between words, to avoid
+  flicker).
+- Why: Mike, 2026-10-24, wanted the social-media look where a background box jumps word to word
+  as it's spoken. Resolve's subtitle track can only put a background behind a whole cue.
+- Rejected: one-word-per-cue `.srt` + Resolve's subtitle background (only the current word on
+  screen, not the phrase); burning captions into a copy of the video (can't move/edit in
+  Resolve); ASS karaoke tags (Resolve doesn't render ASS styling, and ASS has no per-word box);
+  estimating word timings by spreading each `.srt` cue's duration across its words (cue ends are
+  stretched by the reading-speed floor, so the highlight would drift late).
+- Verified: `day 2.wav` - `.srt` byte-identical after the cue-building refactor; overlay is
+  39.7s, 1080x1920, yuva444p; composited preview frames show the box on "Hey" at 1.2s and on
+  "back" at 2.4s, matching the word timings.
+- Date: 2026-10-24

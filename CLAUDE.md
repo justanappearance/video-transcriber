@@ -36,6 +36,15 @@ afterward so nothing gets silently rewritten.
   when that project was scrapped; `.srt` added back 2026-10-12 for a different consumer
   (Resolve's subtitle import) - see DECISIONS.md.)
 
+- `render_captions.py` - turns `<stem>.captions.json` (also written by `transcribe.py`: the
+  same cues as the `.srt`, plus each word's own start/end) into `<stem>.captions.mov`, a
+  transparent ProRes 4444 overlay (1080x1920, 30fps) showing the whole cue with a black
+  rounded box behind the word currently being spoken - the CapCut "highlighted word" look.
+  Drop it on a video track above the clip in Resolve, aligned to the start of the audio it
+  was transcribed from. Style knobs (font, size, colors, position) are constants at the top.
+  To fix a misheard word, edit its `"text"` in the `.captions.json` and re-render.
+  `python render_captions.py "transcripts/<stem>.captions.json"`
+
 ## Usage note
 As of 2026-07-31, `C:\Videos\scripts\automatic\watch-inbox.ps1` auto-calls this script the
 moment it detects and moves a "video journal" (10+ min camera video) into

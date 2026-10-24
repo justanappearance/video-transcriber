@@ -7,6 +7,7 @@ See DECISIONS.md for why, and for the GPU compute-type gotcha on Pascal-era card
 """
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -123,6 +124,23 @@ def _chunk_words_into_captions(words, max_chars: int = MAX_CAPTION_CHARS):
     return chunks
 
 
+def _build_caption_cues(words):
+    """Chunks words into cues and gives each its on-screen time: the longer of the spoken
+    duration and the reading-speed floor, but never running into the next cue."""
+    chunks = _chunk_words_into_captions(words)
+    cues = []
+    for i, chunk in enumerate(chunks):
+        text = "".join(w.word for w in chunk).strip()
+        start = chunk[0].start
+        spoken_end = chunk[-1].end
+        readable_end = start + max(MIN_CAPTION_SECONDS, len(text) / READING_CHARS_PER_SECOND)
+        end = max(spoken_end, readable_end)
+        if i + 1 < len(chunks):
+            end = max(spoken_end, min(end, chunks[i + 1][0].start))
+        cues.append(SimpleNamespace(text=text, start=start, end=end, words=chunk))
+    return cues
+
+
 def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = TRANSCRIPTS_DIR) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     whisper_model = WhisperModel(model, device="cuda", compute_type="int8")
@@ -139,22 +157,24 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
             txt_f.write(segment.text.strip() + "\n")
             all_words.extend(segment.words)
 
-    chunks = _chunk_words_into_captions(_merge_split_words(all_words))
+    cues = _build_caption_cues(_merge_split_words(all_words))
     with srt_path.open("w", encoding="utf-8") as srt_f:
-        for i, chunk in enumerate(chunks, start=1):
-            text = "".join(w.word for w in chunk).strip()
-            lines = "\n".join(textwrap.wrap(text, width=MAX_CAPTION_LINE_CHARS))
-            start = chunk[0].start
-            spoken_end = chunk[-1].end
-            readable_end = start + max(MIN_CAPTION_SECONDS, len(text) / READING_CHARS_PER_SECOND)
-            end = max(spoken_end, readable_end)
-            if i < len(chunks):
-                end = max(spoken_end, min(end, chunks[i][0].start))
-            srt_f.write(f"{i}\n{_srt_timestamp(start)} --> {_srt_timestamp(end)}\n{lines}\n\n")
+        for i, cue in enumerate(cues, start=1):
+            lines = "\n".join(textwrap.wrap(cue.text, width=MAX_CAPTION_LINE_CHARS))
+            srt_f.write(f"{i}\n{_srt_timestamp(cue.start)} --> {_srt_timestamp(cue.end)}\n{lines}\n\n")
+
+    # Same cues as the .srt, plus each word's own timing - render_captions.py needs those to
+    # move the highlight box word by word, which an .srt has no way to carry.
+    captions_path = output_dir / (video_path.stem + ".captions.json")
+    captions_path.write_text(json.dumps([
+        {"start": cue.start, "end": cue.end,
+         "words": [{"text": w.word.strip(), "start": w.start, "end": w.end} for w in cue.words]}
+        for cue in cues
+    ], indent=2), encoding="utf-8")
 
     recorded_at = _recording_timestamp(video_path)
-    os.utime(out_path, (recorded_at, recorded_at))
-    os.utime(srt_path, (recorded_at, recorded_at))
+    for path in (out_path, srt_path, captions_path):
+        os.utime(path, (recorded_at, recorded_at))
     return out_path
 
 
