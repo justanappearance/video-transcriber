@@ -28,7 +28,7 @@ HIGHLIGHT_PAD_Y = 10
 HIGHLIGHT_RADIUS = 14
 MAX_LINE_WIDTH = int(FRAME_WIDTH * 0.88)
 # Lower-middle of a vertical frame: clear of the face, above the platform UI at the bottom.
-CAPTION_CENTER_Y = int(FRAME_HEIGHT * 0.68)
+CAPTION_CENTER_Y = int(FRAME_HEIGHT * 0.78)
 LINE_SPACING = int(FONT_SIZE * 1.25)
 
 
