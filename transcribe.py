@@ -11,14 +11,13 @@ import json
 import os
 import re
 import subprocess
-import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
 from faster_whisper import WhisperModel, BatchedInferencePipeline
 
-# Caption cues for the .srt are capped at these sizes (word-level timestamps, not Whisper's
+# Caption cues are capped at this size (word-level timestamps, not Whisper's
 # own segments - a segment can run 20-30s on Mike's rambling-talk recordings, too long to
 # read as an on-screen caption). Started at CapCut's observed 90/38 (its own auto-caption
 # sizing), but at the large font size Mike's vertical-video subtitle style uses, 90 chars
@@ -27,7 +26,6 @@ from faster_whisper import WhisperModel, BatchedInferencePipeline
 # these as a starting point to adjust, not a fixed target. The .txt output is unaffected,
 # still one line per Whisper segment.
 MAX_CAPTION_CHARS = 24
-MAX_CAPTION_LINE_CHARS = 24
 
 # A cue's on-screen time is the longer of (a) how long it actually took Mike to say it and
 # (b) how long it takes to read, at READING_CHARS_PER_SECOND - fast speech on a long cue
@@ -80,14 +78,6 @@ def _recording_timestamp(video_path: Path) -> float:
     except Exception:
         pass
     return video_path.stat().st_mtime
-
-
-def _srt_timestamp(seconds: float) -> str:
-    total_ms = round(seconds * 1000)
-    hours, rem = divmod(total_ms, 3_600_000)
-    minutes, rem = divmod(rem, 60_000)
-    secs, ms = divmod(rem, 1000)
-    return f"{hours:02d}:{minutes:02d}:{secs:02d},{ms:03d}"
 
 
 _PRONOUN_I = re.compile(r"^i(?:'(?:m|ve|ll|d))?$", re.IGNORECASE)
@@ -165,7 +155,6 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
     )
 
     out_path = output_dir / (video_path.stem + ".txt")
-    srt_path = output_dir / (video_path.stem + ".srt")
     all_words = []
     with out_path.open("w", encoding="utf-8") as txt_f:
         for segment in segments:
@@ -173,13 +162,9 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
             all_words.extend(segment.words)
 
     cues = _build_caption_cues(_merge_split_words(all_words))
-    with srt_path.open("w", encoding="utf-8") as srt_f:
-        for i, cue in enumerate(cues, start=1):
-            lines = "\n".join(textwrap.wrap(cue.text, width=MAX_CAPTION_LINE_CHARS))
-            srt_f.write(f"{i}\n{_srt_timestamp(cue.start)} --> {_srt_timestamp(cue.end)}\n{lines}\n\n")
 
-    # Same cues as the .srt, plus each word's own timing - render_captions.py needs those to
-    # move the highlight box word by word, which an .srt has no way to carry. "text" is what
+    # Each cue with every word's own timing - render_captions.py needs those to move the
+    # highlight box word by word. "text" is what
     # Mike edits to fix a misheard word; "heard" keeps Whisper's original so
     # learn_vocabulary.py can spot his corrections later.
     captions_path = output_dir / (video_path.stem + ".captions.json")
@@ -191,7 +176,7 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
     ], indent=2), encoding="utf-8")
 
     recorded_at = _recording_timestamp(video_path)
-    for path in (out_path, srt_path, captions_path):
+    for path in (out_path, captions_path):
         os.utime(path, (recorded_at, recorded_at))
     return out_path
 

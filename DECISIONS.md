@@ -376,3 +376,17 @@
   swapping one common word for another. The rest of the transcript only shifted punctuation
   and one cue boundary. Manual edits remain the fix for cases like this.
 - Date: 2026-10-24
+
+## Stopped writing the .srt - the caption overlay replaced it
+- Decision: `transcribe.py` no longer writes `<stem>.srt`; outputs are `.txt` and
+  `.captions.json` only. `_srt_timestamp`, `MAX_CAPTION_LINE_CHARS` and the `textwrap` wrap
+  went with it (the overlay wraps by pixel width in `render_captions.py`).
+- Why: Mike, 2026-10-25: "i don't think i will need an srt file moving forward". He now uses
+  the `render_captions.py` overlay instead of Resolve's subtitle import, and nothing else
+  (video-transcriber or C:\Videos\scripts) reads `.srt` files.
+- Rejected: keeping it behind a flag - no current consumer; git history has the writer if
+  Resolve subtitle import is ever wanted again.
+- Verified: re-ran `day 3 take 1.wav` to a scratch dir - only `.txt` + `.captions.json`
+  written, `.captions.json` byte-identical to the previous run's. Existing `.srt` files in
+  `transcripts/` left in place.
+- Date: 2026-10-25

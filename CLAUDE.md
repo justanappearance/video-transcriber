@@ -16,28 +16,23 @@ cleanup/summarization step. Cleanup, if wanted, is a separate manual pass Mike d
 afterward so nothing gets silently rewritten.
 
 ## File map
-- `transcribe.py` - the whole tool. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR)`
+- `transcribe.py` - the transcriber. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR)`
   builds `WhisperModel(model, device="cuda", compute_type="int8")`, wraps it in
   `BatchedInferencePipeline`, and calls `.transcribe(..., batch_size=4, word_timestamps=True)`,
-  writing one segment's text per line to `<output_dir>/<video stem>.txt`, and a separate
-  `<output_dir>/<video stem>.srt` built from word-level timestamps, not Whisper's own
-  segments - `_chunk_words_into_captions()` groups words into ~`MAX_CAPTION_CHARS` (90)
-  chunks, wrapped to `MAX_CAPTION_LINE_CHARS` (38) per line, matching CapCut's observed
-  auto-caption sizing (for importing as captions in DaVinci Resolve - File > Import >
-  Subtitle). Each cue's display duration is then raised to at least a reading-speed floor
-  (`READING_CHARS_PER_SECOND` = 20, `MIN_CAPTION_SECONDS` = 5/6 - Netflix's style-guide
-  numbers) if the literal spoken duration would be too short to read, clamped to never
-  overlap the next cue. Both files' mtimes are stamped to the source video's own recording
-  time, not
-  whenever the script happened to run - see DECISIONS.md ("Output files are stamped with
-  the video's own recording time"). `output_dir` defaults to
-  `C:\Coding\video-transcriber\transcripts` but can be overridden with `--output-dir`.
-  (Used to also write a per-segment `.json` for `video-journal-auto-cut` - removed 2026-08-18
-  when that project was scrapped; `.srt` added back 2026-10-12 for a different consumer
-  (Resolve's subtitle import) - see DECISIONS.md.)
+  writing one segment's text per line to `<output_dir>/<video stem>.txt`, and
+  `<output_dir>/<video stem>.captions.json` - caption cues built from word-level timestamps,
+  not Whisper's own segments: `_chunk_words_into_captions()` groups words into
+  `MAX_CAPTION_CHARS` (24) chunks, breaking at phrase starts (capitalized words). Each cue's
+  display duration is raised to at least a reading-speed floor (`READING_CHARS_PER_SECOND` =
+  20, `MIN_CAPTION_SECONDS` = 5/6 - Netflix's style-guide numbers), clamped to never overlap
+  the next cue. Both files' mtimes are stamped to the source's own recording time - see
+  DECISIONS.md ("Output files are stamped with the video's own recording time"). `output_dir`
+  defaults to `C:\Codingideo-transcriber	ranscripts`, overridable with `--output-dir`.
+  (No `.srt` any more - written 2026-10-12 to 2026-10-25 for Resolve's subtitle import, then
+  dropped once the overlay replaced it; older transcripts may still have one. See DECISIONS.md.)
 
-- `render_captions.py` - turns `<stem>.captions.json` (also written by `transcribe.py`: the
-  same cues as the `.srt`, plus each word's own start/end) into `<stem>.captions.mov`, a
+- `render_captions.py` - turns `<stem>.captions.json` (written by `transcribe.py`: each caption
+  cue plus each word's own start/end) into `<stem>.captions.mov`, a
   transparent ProRes 4444 overlay (1080x1920, 30fps, captions centered at 78% of frame height) showing the whole cue with a black
   rounded box behind the word currently being spoken - the CapCut "highlighted word" look.
   Drop it on a video track above the clip in Resolve, aligned to the start of the audio it
@@ -52,8 +47,8 @@ afterward so nothing gets silently rewritten.
 - `learn_vocabulary.py` - run on an edited `.captions.json`; offers each corrected word
   (normalized: case/punctuation edits don't count) as a vocabulary addition, y/N each.
   `python learn_vocabulary.py "transcripts/<stem>.captions.json"`
-  Fixing a word in `.captions.json` doesn't touch the `.srt`/`.txt` - fix those separately
-  (or ask Claude), then re-render the overlay.
+  Fixing a word in `.captions.json` doesn't touch the `.txt` - fix that separately (or ask
+  Claude), then re-render the overlay.
 
 ## Usage note
 As of 2026-07-31, `C:\Videos\scripts\automatic\watch-inbox.ps1` auto-calls this script the
