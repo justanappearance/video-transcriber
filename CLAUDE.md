@@ -40,15 +40,16 @@ afterward so nothing gets silently rewritten.
   To fix a misheard word, edit its `"text"` in the `.captions.json` and re-render.
   `python render_captions.py "transcripts/<stem>.captions.json"`
 
-- `vocabulary.txt` (gitignored - personal, repo is public) - one word per line (`#` comments
-  ok) that Whisper tends to mishear for Mike. `transcribe.py` passes them as faster-whisper
-  `hotwords`: a bias toward those words, NOT a find-and-replace. Each word in
-  `.captions.json` has `"text"` (what Mike edits) and `"heard"` (Whisper's original).
-- `learn_vocabulary.py` - run on an edited `.captions.json`; offers each corrected word
-  (normalized: case/punctuation edits don't count) as a vocabulary addition, y/N each.
-  `python learn_vocabulary.py "transcripts/<stem>.captions.json"`
   Fixing a word in `.captions.json` doesn't touch the `.txt` - fix that separately (or ask
-  Claude), then re-render the overlay.
+  Claude). Re-running `transcribe.py` on a file overwrites both, including hand fixes - back
+  them up first.
+
+## Failed approaches
+- **Vocabulary hint (faster-whisper `hotwords`), 2026-10-24 to 2026-10-25.** Passing Mike's
+  corrected words to Whisper never fixed one ("hole" stayed "hole"), and any prompt restyles
+  the whole transcript: a bare lowercase "hoe" cut sentence ends 80 -> 27 and lowercased "I";
+  a punctuated version still changed ~20 unrelated words. Removed along with
+  `learn_vocabulary.py`. Don't re-add hotwords/initial_prompt without re-reading DECISIONS.md.
 
 ## Usage note
 As of 2026-07-31, `C:\Videos\scripts\automatic\watch-inbox.ps1` auto-calls this script the

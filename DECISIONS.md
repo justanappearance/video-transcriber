@@ -390,3 +390,20 @@
   written, `.captions.json` byte-identical to the previous run's. Existing `.srt` files in
   `transcripts/` left in place.
 - Date: 2026-10-25
+
+## Vocabulary hint removed - hotwords restyled whole transcripts and fixed nothing
+- Decision: reversed "Learn Mike's vocabulary from his own caption corrections" (above).
+  `transcribe.py` passes no `hotwords`/`initial_prompt`; `learn_vocabulary.py`,
+  `vocabulary.txt` and the `"heard"` field in `.captions.json` are gone. Misheard words are
+  fixed by hand in `.captions.json` (`"text"`).
+- Why: measured 2026-10-25 on an 18-min journal (`PXL_20261008_022541211.TS.mp4`, no "hoe"
+  in it). A bare lowercase "hoe" hint cut sentence-ending punctuation 80 -> 27 and lowercased
+  "I" 36 times (Whisper copies the prompt's style; the caption chunker splits on capitals,
+  so captions got worse too). A punctuated hint ("Words I use: hoe.") restored the style but
+  still changed ~20 unrelated words ("hey y'all" -> "heyo", "saying" -> "thinking"). And the
+  one word it was added for never flipped on `day 2.wav`. Cost on every transcript, no
+  observed benefit. With no hint the output matched the watcher's original transcript
+  byte-for-byte. Mike agreed: "yeah i guess switch the hint off then".
+- Rejected: keeping a punctuated hint (still rewrites unrelated words); find-and-replace
+  rules instead (rejected earlier - corrupts real uses of the word).
+- Date: 2026-10-25

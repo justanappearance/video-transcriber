@@ -5,6 +5,3 @@ venv/
 
 # Personal transcript output - never commit, this repo is public. See DECISIONS.md.
 transcripts/
-
-# Personal vocabulary (see transcribe.py VOCABULARY_PATH) - never commit, this repo is public.
-vocabulary.txt
