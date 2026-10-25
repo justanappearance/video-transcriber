@@ -27,7 +27,7 @@ afterward so nothing gets silently rewritten.
   20, `MIN_CAPTION_SECONDS` = 5/6 - Netflix's style-guide numbers), clamped to never overlap
   the next cue. Both files' mtimes are stamped to the source's own recording time - see
   DECISIONS.md ("Output files are stamped with the video's own recording time"). `output_dir`
-  defaults to `C:\Codingideo-transcriber	ranscripts`, overridable with `--output-dir`.
+  defaults to `C:\Coding\video-transcriber\transcripts`, overridable with `--output-dir`.
   (No `.srt` any more - written 2026-10-12 to 2026-10-25 for Resolve's subtitle import, then
   dropped once the overlay replaced it; older transcripts may still have one. See DECISIONS.md.)
 
