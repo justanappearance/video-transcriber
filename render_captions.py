@@ -27,12 +27,16 @@ HIGHLIGHT_PAD_X = 14
 HIGHLIGHT_PAD_Y = 10
 HIGHLIGHT_RADIUS = 14
 MAX_LINE_WIDTH = int(FRAME_WIDTH * 0.88)
-# Lower-middle of a vertical frame: clear of the face, above the platform UI at the bottom.
-CAPTION_CENTER_Y = int(FRAME_HEIGHT * 0.78)
+CAPTION_CENTER_Y = {
+    # Lower-middle of a vertical frame: clear of the face, above the platform UI at the bottom.
+    "bottom": int(FRAME_HEIGHT * 0.78),
+    # Below the platform UI at the top, for a second caption track above the bottom one.
+    "top": int(FRAME_HEIGHT * 0.18),
+}
 LINE_SPACING = int(FONT_SIZE * 1.25)
 
 
-def _layout_words(words, font):
+def _layout_words(words, font, center_y):
     """Word-wraps a cue by pixel width and returns each word's (x, baseline_y)."""
     space = font.getlength(" ")
     lines, current, current_width = [], [], 0.0
@@ -49,7 +53,7 @@ def _layout_words(words, font):
         lines.append((current, current_width))
 
     positions = []
-    first_baseline = CAPTION_CENTER_Y - (len(lines) - 1) * LINE_SPACING / 2
+    first_baseline = center_y - (len(lines) - 1) * LINE_SPACING / 2
     for line_index, (line, line_width) in enumerate(lines):
         x = (FRAME_WIDTH - line_width) / 2
         baseline = first_baseline + line_index * LINE_SPACING
@@ -59,10 +63,10 @@ def _layout_words(words, font):
     return positions
 
 
-def _draw_frame(cue, active_index, font, box_top, box_bottom):
+def _draw_frame(cue, active_index, font, box_top, box_bottom, center_y):
     image = Image.new("RGBA", (FRAME_WIDTH, FRAME_HEIGHT), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    positions = _layout_words(cue["words"], font)
+    positions = _layout_words(cue["words"], font, center_y)
     if active_index is not None:
         x, baseline, width = positions[active_index]
         draw.rounded_rectangle(
@@ -87,9 +91,10 @@ def _active_word_index(cue, t):
     return active
 
 
-def render(captions_path: Path, out_path: Path):
+def render(captions_path: Path, out_path: Path, position="bottom"):
     cues = json.loads(captions_path.read_text(encoding="utf-8"))
     font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
+    center_y = CAPTION_CENTER_Y[position]
     # Box height comes from fixed reference glyphs, not each word's own bbox, so every
     # word's box is the same height ("a" and "Hey" would otherwise get different boxes).
     box_top = font.getbbox("H", anchor="ls")[1]
@@ -118,7 +123,7 @@ def render(captions_path: Path, out_path: Path):
         cue = cues[cue_index]
         state = (cue_index, _active_word_index(cue, t))
         if state not in rendered:
-            rendered = {state: _draw_frame(cue, state[1], font, box_top, box_bottom)}
+            rendered = {state: _draw_frame(cue, state[1], font, box_top, box_bottom, center_y)}
         ffmpeg.stdin.write(rendered[state])
     ffmpeg.stdin.close()
     if ffmpeg.wait() != 0:
@@ -129,6 +134,9 @@ def render(captions_path: Path, out_path: Path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Render a highlighted-word caption overlay.")
     parser.add_argument("captions", type=Path, help="<stem>.captions.json from transcribe.py")
+    parser.add_argument("--position", choices=CAPTION_CENTER_Y, default="bottom")
     args = parser.parse_args()
-    out = args.captions.with_name(args.captions.name.replace(".captions.json", ".captions.mov"))
-    print(f"Caption overlay written to {render(args.captions, out)}")
+    # Top gets its own filename so it can sit alongside a bottom overlay of the same clip.
+    suffix = ".captions.mov" if args.position == "bottom" else f".captions.{args.position}.mov"
+    out = args.captions.with_name(args.captions.name.replace(".captions.json", suffix))
+    print(f"Caption overlay written to {render(args.captions, out, args.position)}")

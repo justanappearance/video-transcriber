@@ -38,7 +38,7 @@ afterward so nothing gets silently rewritten.
   Drop it on a video track above the clip in Resolve, aligned to the start of the audio it
   was transcribed from. Style knobs (font, size, colors, position) are constants at the top.
   To fix a misheard word, edit its `"text"` in the `.captions.json` and re-render.
-  `python render_captions.py "transcripts/<stem>.captions.json"`
+  `python render_captions.py "transcripts/<stem>.captions.json"` (add `--position top` for a top-of-frame overlay, written to `<stem>.captions.top.mov`)
 
   Fixing a word in `.captions.json` doesn't touch the `.txt` - fix that separately (or ask
   Claude). Re-running `transcribe.py` on a file overwrites both, including hand fixes - back

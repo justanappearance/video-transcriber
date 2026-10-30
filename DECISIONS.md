@@ -407,3 +407,12 @@
 - Rejected: keeping a punctuated hint (still rewrites unrelated words); find-and-replace
   rules instead (rejected earlier - corrupts real uses of the word).
 - Date: 2026-10-25
+
+## Top-of-frame caption overlay
+- Decision: `render_captions.py --position top` centers the caption at 18% of frame height and writes
+  `<stem>.captions.top.mov`. The default stays `bottom` (78%, `<stem>.captions.mov`).
+- Why: Mike, 2026-10-30: wants secondary captions at the top of a vertical clip. A separate filename
+  lets both overlays of a clip exist side by side.
+- Rejected: moving the overlay up in Resolve.
+- Why rejected: works, but every clip would need the same manual Position tweak.
+- Date: 2026-10-30
