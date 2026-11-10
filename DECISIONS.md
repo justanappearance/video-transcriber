@@ -416,3 +416,14 @@
 - Rejected: moving the overlay up in Resolve.
 - Why rejected: works, but every clip would need the same manual Position tweak.
 - Date: 2026-10-30
+
+## captions.json is opt-in (`--captions`)
+- Decision: `transcribe.py` writes only the `.txt` by default. `--captions` adds `<stem>.captions.json`
+  and turns on word timestamps, which only that file uses.
+- Why: Mike, 2026-11-10: asked to stop making it for every transcript. Most transcripts (every
+  journal the inbox watcher auto-transcribes) never get a caption overlay.
+- Rejected: a separate script to build captions.json from an existing transcript.
+- Why rejected: the .txt has no word timings, so it would mean transcribing again anyway.
+- Verified: on a day 6 clip, the .txt without `--captions` matched the earlier transcript
+  byte for byte, and with `--captions` the .captions.json matched byte for byte too.
+- Date: 2026-11-10

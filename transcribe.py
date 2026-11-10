@@ -131,14 +131,15 @@ def _build_caption_cues(words):
     return cues
 
 
-def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = TRANSCRIPTS_DIR) -> Path:
+def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = TRANSCRIPTS_DIR,
+               captions: bool = False) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     whisper_model = WhisperModel(model, device="cuda", compute_type="int8")
     batched_model = BatchedInferencePipeline(model=whisper_model)
     # No hotwords/initial_prompt on purpose - any prompt shifts Whisper's style and wording
     # across the whole transcript. See DECISIONS.md ("Vocabulary hint removed").
     segments, _ = batched_model.transcribe(
-        str(video_path), language="en", batch_size=BATCH_SIZE, word_timestamps=True
+        str(video_path), language="en", batch_size=BATCH_SIZE, word_timestamps=captions
     )
 
     out_path = output_dir / (video_path.stem + ".txt")
@@ -146,23 +147,32 @@ def transcribe(video_path: Path, model: str = DEFAULT_MODEL, output_dir: Path = 
     with out_path.open("w", encoding="utf-8") as txt_f:
         for segment in segments:
             txt_f.write(segment.text.strip() + "\n")
-            all_words.extend(segment.words)
+            if captions:
+                all_words.extend(segment.words)
 
+    written = [out_path]
+    # Opt-in (Mike, 2026-11-10): only clips he's putting captions on need this file, and
+    # most transcripts (every auto-transcribed journal) never do.
+    if captions:
+        written.append(_write_captions(all_words, output_dir / (video_path.stem + ".captions.json")))
+
+    recorded_at = _recording_timestamp(video_path)
+    for path in written:
+        os.utime(path, (recorded_at, recorded_at))
+    return out_path
+
+
+def _write_captions(all_words, captions_path: Path) -> Path:
     cues = _build_caption_cues(_merge_split_words(all_words))
 
     # Each cue with every word's own timing - render_captions.py needs those to move the
     # highlight box word by word. "text" is what Mike edits to fix a misheard word.
-    captions_path = output_dir / (video_path.stem + ".captions.json")
     captions_path.write_text(json.dumps([
         {"start": cue.start, "end": cue.end,
          "words": [{"text": w.word.strip(), "start": w.start, "end": w.end} for w in cue.words]}
         for cue in cues
     ], indent=2), encoding="utf-8")
-
-    recorded_at = _recording_timestamp(video_path)
-    for path in (out_path, captions_path):
-        os.utime(path, (recorded_at, recorded_at))
-    return out_path
+    return captions_path
 
 
 if __name__ == "__main__":
@@ -170,6 +180,8 @@ if __name__ == "__main__":
     parser.add_argument("video", type=Path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--output-dir", type=Path, default=TRANSCRIPTS_DIR)
+    parser.add_argument("--captions", action="store_true",
+                        help="also write <stem>.captions.json for render_captions.py")
     args = parser.parse_args()
-    out = transcribe(args.video, args.model, args.output_dir)
+    out = transcribe(args.video, args.model, args.output_dir, args.captions)
     print(f"Transcript written to {out}")

@@ -16,22 +16,23 @@ cleanup/summarization step. Cleanup, if wanted, is a separate manual pass Mike d
 afterward so nothing gets silently rewritten.
 
 ## File map
-- `transcribe.py` - the transcriber. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR)`
+- `transcribe.py` - the transcriber. `transcribe(video_path, model="medium", output_dir=TRANSCRIPTS_DIR, captions=False)`
   builds `WhisperModel(model, device="cuda", compute_type="int8")`, wraps it in
-  `BatchedInferencePipeline`, and calls `.transcribe(..., batch_size=4, word_timestamps=True)`,
-  writing one segment's text per line to `<output_dir>/<video stem>.txt`, and
-  `<output_dir>/<video stem>.captions.json` - caption cues built from word-level timestamps,
+  `BatchedInferencePipeline`, and calls `.transcribe(..., batch_size=4, word_timestamps=captions)`,
+  writing one segment's text per line to `<output_dir>/<video stem>.txt`. Only with `--captions`
+  (opt-in since 2026-11-10; the inbox watcher's auto-transcribed journals don't pass it) does it
+  also write `<output_dir>/<video stem>.captions.json` - caption cues built from word-level timestamps,
   not Whisper's own segments: `_chunk_words_into_captions()` groups words into
   `MAX_CAPTION_CHARS` (24) chunks, breaking at phrase starts (capitalized words). Each cue's
   display duration is raised to at least a reading-speed floor (`READING_CHARS_PER_SECOND` =
   20, `MIN_CAPTION_SECONDS` = 5/6 - Netflix's style-guide numbers), clamped to never overlap
-  the next cue. Both files' mtimes are stamped to the source's own recording time - see
+  the next cue. Output files' mtimes are stamped to the source's own recording time - see
   DECISIONS.md ("Output files are stamped with the video's own recording time"). `output_dir`
   defaults to `C:\Coding\video-transcriber\transcripts`, overridable with `--output-dir`.
   (No `.srt` any more - written 2026-10-12 to 2026-10-25 for Resolve's subtitle import, then
   dropped once the overlay replaced it; older transcripts may still have one. See DECISIONS.md.)
 
-- `render_captions.py` - turns `<stem>.captions.json` (written by `transcribe.py`: each caption
+- `render_captions.py` - turns `<stem>.captions.json` (written by `transcribe.py --captions`: each caption
   cue plus each word's own start/end) into `<stem>.captions.mov`, a
   transparent ProRes 4444 overlay (1080x1920, 30fps, captions centered at 78% of frame height) showing the whole cue with a black
   rounded box behind the word currently being spoken - the CapCut "highlighted word" look.
